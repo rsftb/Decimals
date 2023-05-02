@@ -1,2 +1,2 @@
 # Decimals
-Clone of the standard python 'decimal' module
+Clone of the standard python 'decimal' module.
