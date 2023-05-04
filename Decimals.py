@@ -207,3 +207,203 @@ class Decimals:
     else:
       yield TypeError # obtuse?
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import numpy as np
+#import itertools
+
+#unfinished
+#numpy vstack implementation
+#single digit math implementation
+
+#add:
+#better "dotless" numbers support
+#add minus haha
+class Decimals:
+  """
+  Decimals class for floating-point operations.
+  Implement as dec = Decimals(3.4)
+  Operate as newdec = dec + otherdec
+  """
+
+  def __init__(self, n):
+    self.value = str(n)
+
+  def __str__(self):
+    return self.value
+
+  def __add__(self, other):
+
+    self.checkInstance(other)  
+    return Decimals(self.combineDecimals(other))
+
+  def combineDecimals(self, other):
+    """
+    combineDecimals (only?) performs addition.
+    Add (kw)args
+    """
+
+    # "a list but numpy"
+    s = np.array([*self.value])
+    o = np.array([*other.value])
+
+    #if s[0] == '.':
+      #s.insert(0, '0')
+    #if o[0] == '.':
+      #o.insert(0, '0')
+
+    # finds the dot in the 
+    si = np.where(s == '.')
+    oi = np.where(o == '.')
+
+    print("s>", s)
+    print("o>", o)
+    print("si>", si)
+    print("oi>", oi)
+    print("\n")
+    
+    valuesdot = [] # 00.
+    dotvalues = [] # .00
+
+    # maybe add a check if there's any number before the dot
+    # if entering .72, python converts .72 to "0.72", which is okay
+    # if entering ".72", it's just a string ".72" which gets unpacked without a zero later on
+    # figure out if that matters though
+
+    print("self")
+    if len(si[0]):
+      sb = "".join(s[:si[0][0]])
+      sa = [s[i] for i in range(si[0][0]+1, s.shape[0])]
+      valuesdot.append("".join(sb))
+      dotvalues.append(sa)
+      print(sb, sa) 
+    else:
+      valuesdot.append("".join(s))
+      
+    print("other")
+    if len(oi[0]):
+      ob = "".join(o[:oi[0][0]])
+      oa = [o[i] for i in range(oi[0][0]+1, o.shape[0])]
+      valuesdot.append("".join(ob))
+      dotvalues.append(oa)
+      print(ob, oa)
+    else:
+      valuesdot.append("".join(o))
+
+    print("\n")
+    print("valuesdot>", valuesdot)
+    print("dotvalues>", dotvalues)
+    print("\n")
+
+    
+    # addition goes number by number, only a self and other get processed at any time
+    # no *args are needed luckily
+    # appendix is defined here instead of down there
+    
+    appendix = []
+    if any(len(dotvalues[0]) != len(dotvalues[1]) for i in range(len(dotvalues))):
+      print("unequal length in dotvalues, take appendix")
+
+      # finds longer and shorter length lists
+      longest = max(len(lst) for lst in dotvalues)
+      shortest = min(len(lst) for lst in dotvalues)
+
+      # appendix holds the end piece of the decimal which is longer and doesn't get operated on either way, this gets appended in its whole to the end of the decimals at the very end
+      for i, l in enumerate(dotvalues):
+        if len(l) == longest:
+          appendix.extend(l[shortest:])
+          dotvalues[i] = dotvalues[i][:shortest]
+
+      print("appendix>", appendix, "\n")
+
+    else:
+     print("equal length in dotvalues, good to go\n")
+
+    # converts string numbers to integer values, easier for logic but conversions are alot either way
+    # converting to int like this is faster than using a for loop apparently
+    dotvalues = np.array(dotvalues)
+    dotvalues = dotvalues.astype(int)
+
+    # turns dotvalues into a vstack
+    dotvalues = np.vstack(dotvalues)
+    print("vstack\n", dotvalues, "\n")
+
+    
+    # working the vstack for an answer
+    # calculate sum of a column, if bigger than 9, see how many times exactly and add to the result of the next column
+    # doesn't seem to cycle more than once though, at most only a single 1 gets added to the whole numbers
+    # maybe expand from singles to wholes
+    dotanswer = []
+    add = 0
+    for i in range(1, len(dotvalues[0])+1):
+      result = dotvalues[0][-i] + dotvalues[1][-i]
+
+      if add:
+        result += add
+
+      cycles = 0
+      while result > 9:
+        result -= 10
+        cycles += 1
+        
+      add = cycles        
+      dotanswer.insert(0, result)
+
+    if cycles:
+      valuesdot.append(str(cycles))
+
+    print("before final processing")
+    print("valuesdot>", valuesdot)
+    print("dotanswer>", dotanswer)
+    if appendix:
+      print("appendix>", appendix) 
+    print("\n")
+    
+    answerdot = [str(sum(int(n) for n in valuesdot))]
+    answerdot.append('.')
+    dotanswer = [str(n) for n in dotanswer]
+    
+    if appendix:
+      dotanswer.extend(appendix)
+      
+    answerdot.extend(dotanswer)
+    
+    print("after final processing")
+    print("answer(dot)>", answerdot)
+    print("dotanswer>", dotanswer)
+    print("\n")
+
+    
+    final_answer = "".join(answerdot)
+
+    print("answer from Decimals")
+    print(final_answer)
+    return final_answer
+  
+    
+  def checkInstance(self, other):
+    """
+    Checks if other argument is also of Decimals
+    Add int/float support
+    Add (kw)args
+    """
+    if isinstance(other, Decimals):
+      pass
+   #elif isinstance(other, int)
+    else:
+      yield TypeError # obtuse?
+    
