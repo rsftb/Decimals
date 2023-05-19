@@ -1,409 +1,282 @@
-import numpy as np
+"""
+`Decimals`
+
+A class that is able to represent and perform arithmetic operations- \n
+using decimal numbers to arbitrary precision.
+
+#TODO: Overload more operators
+#TODO: Add support for native `decimal` module
+#TODO: Add support for negative numbers
+
+#? If multiple decimal separators are in a number, keep the first and pop the rest to preserve the number? Or throw an exception? (Latter as of now.)
+"""
+
+#import os
+#os.system("cls||clear")
+
+import re
+#import numpy as np
+import warnings
 #import functools
 
-# unfinished / w.i.p
-# only does addition
+
+# The class stores numbers as strings,
+# and performs its arithmetic using integer numbers.
+# This means the results are valid decimal numbers, while the calculations do not use them.
+# Float type numbers are prone to calculation errors due to the way the digits are stored in binary format, this class sees to circumvent that.
+# It is not recommended to use float type numbers as arguments for this class.
 class Decimals:
-  """
-  Decimals class for floating-point operations.
-  Implement as dec = Decimals("3.4")
-  Operate as newdec = dec + otherdec
-  """
-
-  def __init__(self, n):
-    self.value = str(n)
-
-  def __str__(self):
-    return self.value
-
-  # the __add__ magic method allows for + operator overloading, so this is what happens when you do + 
-  def __add__(self, other):
-    self.checkInstance(other)
-    return Decimals(self.additionDecimals(other))
-
-  def __sub__(self, other):
-    self.checkInstance(other)
-    return Decimals(self.subtractionDecimals(other))
-
-  def additionDecimals(self, other):
     """
-    combineDecimals (only?) performs addition.
+    Decimals class for floating-point operations. \n
+    Implement as `dec = Decimals("3.4")` \n
+    Operate as `newdec = dec + otherdec` \n
+    Prefer to use `str` or `int` as argument instead of `float`
     """
 
-    print("New Decimals operation\n")
-
-    
-    # makes numpy arrays of the unpacked value strings
-    s = np.array([*self.value])
-    o = np.array([*other.value])
-
-    # numpy function to find all indices of all '.' occurences. maybe unnecessary
-    si = np.where(s == '.')
-    oi = np.where(o == '.')
-
-    #print(si, oi)
-
-    # lists for holding the resulting numbers their components, either before or after the dot
-    valuesdot = [] # 00.
-    dotvalues = [] # .00
-  
-    # if xi[0] holds anything ('.' is found), separates whole and decimal values into two lists
-    # slicing is used with a stop parameter with the number of the index the '.' has. `si` is a tuple with with a nested numpy array storing the index
-    # .shape is similar to len() but for numpy arrays
-    print("\nself")
-    if len(si[0]):
-      sb = s[:si[0][0]]
-      sa = [s[i] for i in range(si[0][0]+1, s.shape[0])]
-      valuesdot.append("".join(sb))
-      dotvalues.append("".join(sa))
-      print(sb,'.',sa) 
-    else:
-      valuesdot.append("".join(s))
-      print(valuesdot[0],'.')
-      
-    print("\nother")
-    if len(oi[0]):
-      ob = o[:oi[0][0]]
-      oa = [o[i] for i in range(oi[0][0]+1, o.shape[0])]
-      valuesdot.append("".join(ob))
-      dotvalues.append("".join(oa))
-      print(ob,'.',oa)
-    else:
-      valuesdot.append("".join(o))
-      print(valuesdot[1],'.')
-
-    # if any of the dotvalues indices do not match the length of index [0], meaning not all indices are of the same length, execute code that adds zeros to the shorter indices
-    #! or, remove overflowing indices and add at the end, no calculation has to be performed on them anyway (implemented in other Decimals replit)
-    #! '12' and '345', '5' overflows, pop that, do the maths on '12' and '35', and reinsert '5' at the end
-    if any(len(dotvalues[i]) != len(dotvalues[0]) for i in range(len(dotvalues))):
-
-      print("\nadding zeroes to equalize lengths")
-
-      longest = 0
-      for decimal in dotvalues:
-        if len(decimal) > longest:
-          longest = len(decimal)
-
-      for i in range(len(dotvalues)):
-        length = len(dotvalues[i])
-        if length < longest:
-          for _ in range(longest-length):
-            dotvalues[i] += '0'  
-
-      print(dotvalues, "new\n")
-    # else longest is just whatever the length of the first index is
-    else: 
-      print("\nsame length decimals, no extra zeroes needed\n")
-      longest = len(dotvalues[0])
-
-    # convert values before the dot and after the dot to new formats
-    newwhole = sum([int(i) for i in valuesdot])
-    newdec = [*str(sum([int(i) for i in dotvalues]))]
-
-    print(newwhole,"newwhole")
-    print(newdec,"newdec")
-    
-    # if the length of the new decimal list is longer than the longest (longest is 2 but len(newdec) is 3, slice the remainder off of newdec and add that to newwhole)
-    # could be done easier probably since the 
-    if len(newdec) > longest:
-      newwhole += int("".join(newdec[:len(newdec)-longest]))
-      newdec = newdec[len(newdec)-longest:]
-
-    # finally, add everything together
-    final_value = str(newwhole)
-    final_value += "."
-    final_value += "".join(newdec)
-
-    print("End of Decimals operation\n")
-    print("\nanswer from Decimals\n" + final_value)
-    return final_value
-
- 
-  def subtractionDecimals(self, other):
-    """
-    For the - operator
-    Poorly implemented so far 
-    """
-    # makes numpy arrays of the unpacked value strings
-    s = np.array([*self.value])
-    o = np.array([*other.value])
-
-    # numpy function to find all indices of all '.' occurences. maybe unnecessary
-    si = np.where(s == '.')
-    oi = np.where(o == '.')
+    allowed_separators = ('.', ',')
+    separator = ','
 
-    #print(si, oi)
+    @classmethod
+    def set_separator(cls, sep:str):
+        """Set the symbol that separates the wholes from the decimals, default is ','"""
+        if sep in cls.allowed_separators:
+            cls.separator = sep
+        else:
+            raise ValueError(f"set_separator() - Invalid separator '{sep}'")
 
-    # lists for holding the resulting numbers their components, either before or after the dot
-    valuesdot = [] # 00.
-    dotvalues = [] # .00
-  
-    # if xi[0] holds anything ('.' is found), separates whole and decimal values into two lists
-    # slicing is used with a stop parameter with the number of the index the '.' has. `si` is a tuple with with a nested numpy array storing the index
-    # .shape is similar to len() but for numpy arrays
-    print("self")
-    if len(si[0]):
-      sb = s[:si[0][0]]
-      sa = [s[i] for i in range(si[0][0]+1, s.shape[0])]
-      valuesdot.append("".join(sb))
-      dotvalues.append("".join(sa))
-      print(sb,'.',sa) 
-    else:
-      valuesdot.append("".join(s))
-      print(valuesdot[0],'.')
-      
-    print("other")
-    if len(oi[0]):
-      ob = o[:oi[0][0]]
-      oa = [o[i] for i in range(oi[0][0]+1, o.shape[0])]
-      valuesdot.append("".join(ob))
-      dotvalues.append("".join(oa))
-      print(ob,'.',oa)
-    else:
-      valuesdot.append("".join(o))
-      print(valuesdot[1],'.')
 
-    if not valuesdot:
-      valuesdot[0] = "0"
-      
-    # if any of the dotvalues indices do not match the length of index [0], meaning not all indices are of the same length, execute code that adds zeros to the shorter indices
-    #! or, remove overflowing indices and add at the end, no calculation has to be performed on them anyway
-    #! '12' and '345', '5' overflows, pop and reinsert later
-    if any(len(dotvalues[i]) != len(dotvalues[0]) for i in range(len(dotvalues))):
+    def __init__(self, n):
 
-      longest = 0
-      for decimal in dotvalues:
-        if len(decimal) > longest:
-          longest = len(decimal)
-
-      for i in range(len(dotvalues)):
-        length = len(dotvalues[i])
-        if length < longest:
-          for _ in range(longest-length):
-            dotvalues[i] += '0'  
-
-      print(dotvalues, "new")
-    # else longest is just whatever the length of the first index is
-    else: 
-      longest = len(dotvalues[0])
-
-    # convert values before the dot and after the dot to new formats
-    newwhole = [int(valuesdot[0])-int(valuesdot[1])]
-    newdec = [int(i) for i in dotvalues]
-
-    print(newwhole,"newwhole")
-    print(newdec,"newdec")
-
-    
-  def checkInstance(self, other):
-    """
-    Checks if other argument is also of Decimals
-    Add int/float support
-    Add (kw)args
-    """
-    if isinstance(other, Decimals):
-      pass
-   #elif isinstance(other, int)
-    else:
-      yield TypeError # obtuse?
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import numpy as np
-#import itertools
-
-#unfinished
-#numpy vstack implementation
-#single digit math implementation
-
-#add:
-#better "dotless" numbers support
-#add minus haha
-class Decimals:
-  """
-  Decimals class for floating-point operations.
-  Implement as dec = Decimals(3.4)
-  Operate as newdec = dec + otherdec
-  """
-
-  def __init__(self, n):
-    self.value = str(n)
-
-  def __str__(self):
-    return self.value
-
-  def __add__(self, other):
-
-    self.checkInstance(other)  
-    return Decimals(self.combineDecimals(other))
-
-  def combineDecimals(self, other):
-    """
-    combineDecimals (only?) performs addition.
-    Add (kw)args
-    """
-
-    # "a list but numpy"
-    s = np.array([*self.value])
-    o = np.array([*other.value])
-
-    #if s[0] == '.':
-      #s.insert(0, '0')
-    #if o[0] == '.':
-      #o.insert(0, '0')
-
-    # finds the dot in the 
-    si = np.where(s == '.')
-    oi = np.where(o == '.')
-
-    print("s>", s)
-    print("o>", o)
-    print("si>", si)
-    print("oi>", oi)
-    print("\n")
-    
-    valuesdot = [] # 00.
-    dotvalues = [] # .00
-
-    # maybe add a check if there's any number before the dot
-    # if entering .72, python converts .72 to "0.72", which is okay
-    # if entering ".72", it's just a string ".72" which gets unpacked without a zero later on
-    # figure out if that matters though
-
-    print("self")
-    if len(si[0]):
-      sb = "".join(s[:si[0][0]])
-      sa = [s[i] for i in range(si[0][0]+1, s.shape[0])]
-      valuesdot.append("".join(sb))
-      dotvalues.append(sa)
-      print(sb, sa) 
-    else:
-      valuesdot.append("".join(s))
-      
-    print("other")
-    if len(oi[0]):
-      ob = "".join(o[:oi[0][0]])
-      oa = [o[i] for i in range(oi[0][0]+1, o.shape[0])]
-      valuesdot.append("".join(ob))
-      dotvalues.append(oa)
-      print(ob, oa)
-    else:
-      valuesdot.append("".join(o))
-
-    print("\n")
-    print("valuesdot>", valuesdot)
-    print("dotvalues>", dotvalues)
-    print("\n")
-
-    
-    # addition goes number by number, only a self and other get processed at any time
-    # no *args are needed luckily
-    # appendix is defined here instead of down there
-    
-    appendix = []
-    if any(len(dotvalues[0]) != len(dotvalues[1]) for i in range(len(dotvalues))):
-      print("unequal length in dotvalues, take appendix")
-
-      # finds longer and shorter length lists
-      longest = max(len(lst) for lst in dotvalues)
-      shortest = min(len(lst) for lst in dotvalues)
-
-      # appendix holds the end piece of the decimal which is longer and doesn't get operated on either way, this gets appended in its whole to the end of the decimals at the very end
-      for i, l in enumerate(dotvalues):
-        if len(l) == longest:
-          appendix.extend(l[shortest:])
-          dotvalues[i] = dotvalues[i][:shortest]
-
-      print("appendix>", appendix, "\n")
-
-    else:
-     print("equal length in dotvalues, good to go\n")
-
-    # converts string numbers to integer values, easier for logic but conversions are alot either way
-    # converting to int like this is faster than using a for loop apparently
-    dotvalues = np.array(dotvalues)
-    dotvalues = dotvalues.astype(int)
-
-    # turns dotvalues into a vstack
-    dotvalues = np.vstack(dotvalues)
-    print("vstack\n", dotvalues, "\n")
-
-    
-    # working the vstack for an answer
-    # calculate sum of a column, if bigger than 9, see how many times exactly and add to the result of the next column
-    # doesn't seem to cycle more than once though, at most only a single 1 gets added to the whole numbers
-    # maybe expand from singles to wholes
-    dotanswer = []
-    add = 0
-    for i in range(1, len(dotvalues[0])+1):
-      result = dotvalues[0][-i] + dotvalues[1][-i]
-
-      if add:
-        result += add
-
-      cycles = 0
-      while result > 9:
-        result -= 10
-        cycles += 1
-        
-      add = cycles        
-      dotanswer.insert(0, result)
-
-    if cycles:
-      valuesdot.append(str(cycles))
-
-    print("before final processing")
-    print("valuesdot>", valuesdot)
-    print("dotanswer>", dotanswer)
-    if appendix:
-      print("appendix>", appendix) 
-    print("\n")
-    
-    answerdot = [str(sum(int(n) for n in valuesdot))]
-    answerdot.append('.')
-    dotanswer = [str(n) for n in dotanswer]
-    
-    if appendix:
-      dotanswer.extend(appendix)
-      
-    answerdot.extend(dotanswer)
-    
-    print("after final processing")
-    print("answer(dot)>", answerdot)
-    print("dotanswer>", dotanswer)
-    print("\n")
-
-    
-    final_answer = "".join(answerdot)
-
-    print("answer from Decimals")
-    print(final_answer)
-    return final_answer
-  
-    
-  def checkInstance(self, other):
-    """
-    Checks if other argument is also of Decimals
-    Add int/float support
-    Add (kw)args
-    """
-    if isinstance(other, Decimals):
-      pass
-   #elif isinstance(other, int)
-    else:
-      yield TypeError # obtuse?
-    
+        # Set the number its string value
+        n = self.instantiate_number(n)
+
+        # Check using regex if the pattern is a valid one
+        n = self.validate_regex(n)
+
+        self.value = n
+
+
+    #* Magic methods
+    #? Mainly for operator overloading
+
+    def __add__(self, other):
+        return Decimals(self.additionDecimals(other))
+
+    def __sub__(self, other):
+        return Decimals(self.subtractionDecimals(other))
+
+    def __mul__(self, other):
+        return Decimals(self.multiplicationDecimals(other))
+
+    def __div__(self, other):
+        return Decimals(self.divisionDecimals(other))
+
+    def __str__(self):
+        return self.value
+
+
+    #* Supplementary methods
+    #? Validators and helpers
+
+    # Value instantiation method
+    # Used during __init__, Checks if input is valid, formats the number and returns a string
+    def instantiate_number(self, number) -> str:
+        "Returns the string of n (and catches types?)."
+
+        # Raise exception if n is falsy
+        if not number:
+            raise ValueError("instantiate_number() - n is falsy")
+
+        # Check if already Decimals
+        if isinstance(number, Decimals):
+            return number.value
+
+        # Check for safe types and return a string
+        elif isinstance(number, int) or isinstance(number, str):
+            return str(number)
+
+        # Check for unsafe types
+        elif isinstance(number, float):
+            warnings.warn(f"instantiate_number() - Precision warning: float type number ({number})")
+            return str(number)
+
+        else:
+            raise TypeError(f"instantiate_number() - Couldn't instantiate \"{number}\" (type: {type(number)})")
+
+    # Number validation method
+    # Uses regex to check whether or not given numbers are valid
+    # Assumes string input
+    def validate_regex(self, number:str):
+        "Checks if a given number has a valid numerical pattern using regex."
+
+        # Remove one false period at the end of the number
+        if number[-1] in ('.', ','):
+            number = number[:-1]
+
+        # Insert '0' at the beginning of the number if the first index is a period
+        if number[0] in ('.', ','):
+            _ = '0'
+            _ += number
+            number = _
+
+        # Regex to check if the numbers given are valid. If not, raise an exception
+        # Capture pattern => [numbers at the beginning], (none or one separator in the middle), [numbers at the end]
+        pattern = re.compile(r'^[0-9]*([.,]?)[0-9]*$')
+        match = pattern.fullmatch(number)
+
+        if not match:
+            raise ValueError("validate_regex() - Pattern doesn't match on n")
+
+        return number
+
+
+    #* Numeric conversion functions
+    #? Crunches the numbers. Assumes numbers use the valid string format
+
+    def additionDecimals(self, other):
+
+        # Turn numbers into lists, each index holding a digit
+        s = [*self.value]
+        o = [*other.value]
+
+        # Find index of periods if present. Periods and commas are treated as the same, the first one found will default to the dot used
+        # `si` and `oi` keep the indices of the dots found
+        si = False
+        oi = False
+
+        for i, digit in enumerate(s):
+            if digit in Decimals.allowed_separators:
+                s[i] = ','
+                si = i
+                break
+
+        for i, digit in enumerate(o):
+            if digit in Decimals.allowed_separators:
+                o[i] = ','
+                oi = i
+                break
+
+        # Normal addition if the numbers aren't decimal
+        if not si and not oi:
+            print("Short circuit to normal addition")
+            short_circuit = str( int("".join(s)) + int("".join(o)) )
+            return short_circuit
+
+        # Create two separate lists, one for pre-dot and one for post-dot numbers
+        valuesdot = []
+        dotvalues = []
+
+        # Add numbers to the corresponding lists
+        if si:
+            valuesdot.append(s[:si])
+            dotvalues.append(s[si+1:])
+        else:
+            valuesdot.append(s)
+
+        if oi:
+            valuesdot.append(o[:oi])
+            dotvalues.append(o[oi+1:])
+        else:
+            valuesdot.append(o)
+
+
+        # Find appendix for dotvalues
+        # Goes for any sequence of sub-decimal values that aren't subject to calculations
+        # In (22.450 + 35), 450 is the appendix and dotvalues gets cleared
+        if len(dotvalues) == 1:
+            # If the length of dotvalues is 1, meaning only one number has decimals, move the decimal value to appendix and paste at the end
+            # Change dotvalues to an empty string (falsy)
+            appendix = "".join(dotvalues[0])
+            dotvalues = ''
+
+        elif len(dotvalues) == 2 and len(dotvalues[0]) != len(dotvalues[1]):
+            # If the length of dotvalues is 2, meaning both numbers are decimal numbers, and the lengths are not the same to each other, put the remainder in appendix and paste at the end
+            # Remove the remainder from dotvalues
+
+            longest = max(dotvalues, key=len)
+            shortest = min(dotvalues, key=len)
+
+            appendix = longest[len(shortest):]
+            appendix = "".join(appendix)
+
+            # Slice appendix out of dotvalues
+            for i, sub in enumerate(dotvalues):
+                if sub == longest:
+                    dotvalues[i] = longest[:len(shortest)-len(longest)]
+
+        elif len(dotvalues) == 1:
+            appendix = "".join(dotvalues[0])
+
+        else:
+            appendix = False
+
+
+        # If dotvalues, get the length of dotvalues[0]
+        # At this point in the code, after looking for the appendix in the if-elif-else statements above, presence and length of dotvalues have been determined
+        # Used once, but to good use
+        if dotvalues:
+            dot_len = len(dotvalues[0])
+        else:
+            dot_len = 0
+
+        # Change list valuesdot to hold integers and add them up
+        valuesdot = ["".join(number) for number in valuesdot]
+        valuesdot[0], valuesdot[1] = int(valuesdot[0]), int(valuesdot[1])
+
+        answerdot = valuesdot[0] + valuesdot[1]
+
+        # Convert dotvalues of separate integers and add them up
+        if dotvalues:
+            for i, sub in enumerate(dotvalues):
+                dotvalues[i] = ["".join(sub)]
+                dotvalues[i] = int(dotvalues[i][0])
+
+        # Sum up the digits after the decimal point of both numbers
+        dotanswer = sum(dotvalues)
+
+        # Turn dotanswer into a string of its held value
+        dotanswer = str(dotanswer)
+
+        # If the length of the decimals in dotvalues has changed after addition, add 1 to answerdot and remove the first digit from dotanswer
+        # Written in pseudo-math in context with the code, when decimals don't add up to a new number before the dot (0.5 + 0.4 = 0.9), don't add 1
+        # If the numbers behind the decimal do add up to a new number before the dot (0.9 + 0.2 = '0.11' = 1.1), account for displacement; add 1 and remove leftmost number from dotanswer
+        if dotvalues and len(dotanswer) > dot_len:
+            answerdot += 1
+            dotanswer = dotanswer[1:]
+
+
+        # Combine and finish
+        final_answer = str(answerdot)
+
+        final_answer += Decimals.separator
+
+        final_answer += str(dotanswer)
+
+        if appendix:
+            final_answer += appendix
+
+        return final_answer
+
+
+    def subtractionDecimals(self, other):
+        raise NotImplementedError
+
+
+a = Decimals("234,2325375547563457824895627834623786473264789236478236478623784623789468836572")
+b = Decimals("1,235343287467864235423546174789123891293")
+c = a + b
+print(c)
+
+Decimals.set_separator('.')
+c = a + b
+print(c)
+
+
+# For comparison
+import decimal
+decimal.getcontext().prec = 1000
+
+a = decimal.Decimal("234.2325375547563457824895627834623786473264789236478236478623784623789468836572")
+b = decimal.Decimal("1.235343287467864235423546174789123891293")
+c = a + b
+print(c)
